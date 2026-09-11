@@ -1,29 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-  body {background:black;color:white;font-family:'Press Start 2P', monospace;}
-  #supaplex {
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    font-size:32px;
+  body, html {
+    background: black;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
+    color: white;
+  }
+  .word {
+    position: absolute;
+    font-size: 32px;
+    color: white;
+    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000,
+                 -2px 2px 0 #000, 2px 2px 0 #000,
+                 4px 4px 6px rgba(0,0,0,0.8);
+  }
+  #timer {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    color: lime;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000,
+                 -2px 2px 0 #000, 2px 2px 0 #000;
+  }
+  .shard {
+    position: absolute;
+    font-size: 14px;
+    color: white;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+                 -1px 1px 0 #000, 1px 1px 0 #000;
   }
 </style>
 </head>
 <body>
-<div id="loading">LOADING...</div>
-<div id="supaplex">SUPAPLEX</div>
 <div id="timer">0 sec</div>
+<div id="container"></div>
 
 <script>
+const container=document.getElementById('container');
+const timerBox=document.getElementById('timer');
 let startTime=Date.now();
-setInterval(()=>{
-  document.getElementById('timer').innerText=Math.floor((Date.now()-startTime)/1000)+" сек";
-},1000);
+setInterval(()=>{timerBox.innerText=Math.floor((Date.now()-startTime)/1000)+" сек";},1000);
+
+let letters=[],shards=[],animFrame;
+
+function createWord(text,yPos){
+  let startX=(window.innerWidth-text.length*32)/2;
+  let arr=[];
+  for(let i=0;i<text.length;i++){
+    const span=document.createElement('div');
+    span.className='word';
+    span.innerText=text[i];
+    container.appendChild(span);
+    arr.push({el:span,x:startX+i*32,y:yPos,velY:0,gravity:0.2,isBroken:false});
+  }
+  return arr;
+}
+
+function startCycle(){
+  cancelAnimationFrame(animFrame);
+  container.innerHTML='';
+  letters=[];
+  // SUPAPLEX вище
+  letters=createWord("SUPAPLEX",-50);
+  // LOADING нижче
+  letters=letters.concat(createWord("LOADING...",-150));
+  animFrame=requestAnimationFrame(update);
+}
+
+function breakWords(){
+  letters.forEach(l=>{
+    l.el.remove();
+    createShards(l.x,l.y,32);
+  });
+  letters=[];
+  setTimeout(startCycle,2000);
+}
+
+function createShards(x,y,fSize){
+  for(let i=0;i<6;i++){
+    const shard=document.createElement('div');
+    shard.className='shard';
+    shard.innerText=['#','*','x','o','•'][Math.floor(Math.random()*5)];
+    container.appendChild(shard);
+    shards.push({el:shard,x:x,y:y,velX:(Math.random()-0.5)*4,velY:(Math.random()-0.5)*4,gravity:0.1,opacity:1});
+  }
+}
+
+function update(){
+  let active=false;
+  letters.forEach(l=>{
+    if(l.isBroken)return;
+    l.velY+=l.gravity;l.y+=l.velY;
+    l.el.style.transform=`translate(${l.x}px,${l.y}px)`;
+    if(l.y>=window.innerHeight*0.4){l.isBroken=true;breakWords();}
+    else active=true;
+  });
+  for(let i=shards.length-1;i>=0;i--){
+    const s=shards[i];
+    s.velY+=s.gravity;s.x+=s.velX;s.y+=s.velY;s.opacity-=0.02;
+    if(s.opacity<=0){s.el.remove();shards.splice(i,1);}
+    else{s.el.style.transform=`translate(${s.x}px,${s.y}px)`;s.el.style.opacity=s.opacity;active=true;}
+  }
+  if(active)animFrame=requestAnimationFrame(update);
+}
+
+window.onload=startCycle;
 </script>
 </body>
 </html>
+
 
 
