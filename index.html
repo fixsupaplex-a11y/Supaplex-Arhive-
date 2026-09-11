@@ -7,8 +7,6 @@
     background: black;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    width: 100%;
     height: 100vh;
     font-family: 'Press Start 2P', monospace;
     color: white;
@@ -20,59 +18,22 @@
     transform: translateX(-50%);
     font-size: 32px;
     color: white;
-    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000,
-                 -2px 2px 0 #000, 2px 2px 0 #000,
-                 4px 4px 6px rgba(0,0,0,0.6);
     animation: blink 1.5s infinite;
   }
   @keyframes blink {0%{opacity:1;}50%{opacity:0;}100%{opacity:1;}}
-  .letter,.shard {
-    position: absolute;
-    font-weight: bold;
-    color: white;
-    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000,
-                 -2px 2px 0 #000, 2px 2px 0 #000,
-                 4px 4px 6px rgba(0,0,0,0.6);
-    will-change: transform, opacity;
-  }
-  #error {position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:red;font-size:20px;display:none;}
   #timer {position:absolute;top:10px;right:10px;font-size:18px;color:lime;}
-  #dosbox {width:100%;height:100%;display:none;}
 </style>
 </head>
 <body>
-<div id="container"></div>
-<div id="error"></div>
+<div id="loading">LOADING...</div>
 <div id="timer">0 сек</div>
-<div id="dosbox"></div>
 
-<script src="https://js-dos.com/6.22/current/js-dos.js" defer></script>
 <script>
-const container=document.getElementById('container');
-const errorBox=document.getElementById('error');
-const timerBox=document.getElementById('timer');
-const dosbox=document.getElementById('dosbox');
-let letters=[],shards=[],animFrame;
-
-// !!! Встав своє реальне посилання з Vercel
-const fileUrl="https://supaplex-arhive.vercel.app/supaplex.zip";
-
-// Таймер
 let startTime=Date.now();
-setInterval(()=>{timerBox.innerText=Math.floor((Date.now()-startTime)/1000)+" сек";},1000);
-
-function startCycle(){
-  cancelAnimationFrame(animFrame);
-  container.innerHTML='';
-  errorBox.style.display='none';
-  letters=[];shards=[];
-  const loading=document.createElement('div');
-  loading.id='loading';loading.innerText='LOADING...';
-  container.appendChild(loading);
-  createSupaplex();
-}
-function createSupaplex(){
-  const text="SUPAPLEX";const fontSize=32;
-  let startX=(window.innerWidth-text.length*fontSize)/2;
-  for(let
+setInterval(()=>{
+  document.getElementById('timer').innerText=Math.floor((Date.now()-startTime)/1000)+" сек";
+},1000);
+</script>
+</body>
+</html>
 
