@@ -20,15 +20,6 @@
                  -2px 2px 0 #000, 2px 2px 0 #000,
                  4px 4px 6px rgba(0,0,0,0.8);
   }
-  #loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 32px;
-    animation: blink 1.5s infinite;
-  }
-  @keyframes blink {0%{opacity:1;}50%{opacity:0;}100%{opacity:1;}}
   #timer {
     position: absolute;
     top: 10px;
@@ -49,46 +40,48 @@
 </style>
 </head>
 <body>
-<div id="timer">0 sec</div>
-<div id="loading">LOADING...</div>
+<div id="timer">0 сек</div>
 <div id="container"></div>
 
 <script>
 const container=document.getElementById('container');
 const timerBox=document.getElementById('timer');
-const loading=document.getElementById('loading');
 let startTime=Date.now();
 setInterval(()=>{timerBox.innerText=Math.floor((Date.now()-startTime)/1000)+" сек";},1000);
 
 let letters=[],shards=[],animFrame;
 
-function createSupaplex(){
-  const text="SUPAPLEX";
+function createWord(text,yPos){
   let startX=(window.innerWidth-text.length*32)/2;
+  let arr=[];
   for(let i=0;i<text.length;i++){
     const span=document.createElement('div');
     span.className='word';
     span.innerText=text[i];
     container.appendChild(span);
-    letters.push({el:span,x:startX+i*32,y:-50,velY:0,gravity:0.3,isBroken:false});
+    arr.push({el:span,x:startX+i*32,y:yPos,velY:0,gravity:0.2,isBroken:false});
   }
+  return arr;
+}
+
+function startCycle(){
+  cancelAnimationFrame(animFrame);
+  container.innerHTML='';
+  letters=[];
+  // SUPAPLEX вище
+  letters=createWord("SUPAPLEX",-50);
+  // LOADING нижче
+  letters=letters.concat(createWord("LOADING...",-150));
   animFrame=requestAnimationFrame(update);
 }
 
 function breakWords(){
-  loading.style.animation='none';
   letters.forEach(l=>{
     l.el.remove();
     createShards(l.x,l.y,32);
   });
-  const loadText=loading.innerText;
-  let startX=(window.innerWidth-loadText.length*32)/2;
-  for(let i=0;i<loadText.length;i++){
-    createShards(startX+i*32,window.innerHeight*0.5,32);
-  }
-  loading.remove();
   letters=[];
-  setTimeout(()=>{location.reload();},2000); // новий цикл
+  setTimeout(startCycle,2000);
 }
 
 function createShards(x,y,fSize){
@@ -107,14 +100,23 @@ function update(){
     if(l.isBroken)return;
     l.velY+=l.gravity;l.y+=l.velY;
     l.el.style.transform=`translate(${l.x}px,${l.y}px)`;
-    // перевірка зіткнення з LOADING
-    const loadRect=loading.getBoundingClientRect();
-    if(l.y+32>=loadRect.top){
-      l.isBroken=true;
-      breakWords();
-    } else active=true;
+    if(l.y>=window.innerHeight*0.4){l.isBroken=true;breakWords();}
+    else active=true;
   });
-  for(let i=shards.length
+  for(let i=shards.length-1;i>=0;i--){
+    const s=shards[i];
+    s.velY+=s.gravity;s.x+=s.velX;s.y+=s.velY;s.opacity-=0.02;
+    if(s.opacity<=0){s.el.remove();shards.splice(i,1);}
+    else{s.el.style.transform=`translate(${s.x}px,${s.y}px)`;s.el.style.opacity=s.opacity;active=true;}
+  }
+  if(active)animFrame=requestAnimationFrame(update);
+}
+
+window.onload=startCycle;
+</script>
+</body>
+</html>
+
 
 
 
