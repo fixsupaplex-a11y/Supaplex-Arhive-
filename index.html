@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  body, html {
+    background: black;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    font-family: 'Press Start 2P', monospace;
+    color: white;
+  }
+  #loading {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 32px;
+    color: #000;
+    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff,
+                 -2px 2px 0 #fff, 2px 2px 0 #fff,
+                 4px 4px 6px rgba(0,0,0,0.6);
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink {0%{opacity:1;}50%{opacity:0;}100%{opacity:1;}}
+  .letter,.shard {
+    position: absolute;
+    font-weight: bold;
+    color: #000;
+    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff,
+                 -2px 2px 0 #fff, 2px 2px 0 #fff,
+                 4px 4px 6px rgba(0,0,0,0.6);
+    will-change: transform, opacity;
+  }
+  #error {position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:red;font-size:20px;display:none;}
+  #timer {position:absolute;top:10px;right:10px;font-size:18px;color:lime;}
+  #dosbox {width:100%;height:100%;display:none;}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="error"></div>
+<div id="timer">0 сек</div>
+<div id="dosbox"></div>
+
+<script src="https://js-dos.com/6.22/current/js-dos.js" defer></script>
+<script>
+const container=document.getElementById('container');
+const errorBox=document.getElementById('error');
+const timerBox=document.getElementById('timer');
+const dosbox=document.getElementById('dosbox');
+let letters=[],shards=[],animFrame;
+
+// !!! Встав своє реальне посилання з Vercel
+const fileUrl="https://supaplex-arhive.vercel.app/supaplex.zip";
+
+// Таймер
+let startTime=Date.now();
+setInterval(()=>{timerBox.innerText=Math.floor((Date.now()-startTime)/1000)+" сек";},1000);
+
+function startCycle(){
+  cancelAnimationFrame(animFrame);
+  container.innerHTML='';
+  errorBox.style.display='none';
+  letters=[];shards=[];
+  const loading=document.createElement('div');
+  loading.id='loading';loading.innerText='LOADING...';
+  container.appendChild(loading);
+  createSupaplex();
+}
+function createSupaplex(){
+  const text="SUPAPLEX";const fontSize=32;
+  let startX=(window.innerWidth-text.length*fontSize)/2;
+  for(let i=0;i<text.length;i++){
+    const span=document.createElement('div');
+    span.className='letter';span.style.fontSize=fontSize+'px';span.innerText=text[i];
+    container.appendChild(span);
+    letters.push({element:span,x:startX+i*fontSize,y:-50,velY:0,gravity:0.1,targetY:window.innerHeight*0.4-20,isBroken:false});
+  }
+  animFrame=requestAnimationFrame(update);
+}
+function breakWords(){
+  const loading=document.getElementById('loading');
+  if(loading){
+    loading.style.animation='none';
+    const text=loading.innerText;const fontSize=32;
+    let startX=(window.innerWidth-text.length*fontSize)/2;
+    for(let i=0;i<text.length;i++){
+      const span=document.createElement('div');
+      span.className='letter';span.style.fontSize=fontSize+'px';span.innerText=text[i];
+      container.appendChild(span);
+      letters.push({element:span,x:startX+i*fontSize,y:window.innerHeight*0.4,velY:0,gravity:0.1,targetY:window.innerHeight*0.5,isBroken:false});
+    }
+    loading.remove();
+  }
+  letters.forEach(l=>{l.element.remove();createShards(l.x,l.y,32);});
+  letters=[];
+  setTimeout(startCycle,2000);
+}
+function createShards(x,y,fSize){
+  for(let i=0;i<6;i++){
+    const shard=document.createElement('div');
+    shard.className='shard';shard.style.fontSize=(fSize*0.4)+'px';
+    shard.innerText=['#','*','x','o','•'][Math.floor(Math.random()*5)];
+    container.appendChild(shard);
+    shards.push({element:shard,x:x,y:y,velX:(Math.random()-0.5)*3,velY:(Math.random()-0.8)*4,gravity:0.05,opacity:1});
+  }
+}
+function showError(msg){errorBox.style.display='block';errorBox.innerText="ERROR: "+msg;}
+function update(){
+  let active=false;
+  letters.forEach(l=>{
+    if(l.isBroken)return;
+    l.velY+=l.gravity;l.y+=l.velY;
+    l.element.style.transform=`translate3d(${l.x}px,${l.y}px,0)`;
+    if(l.y>=l.targetY){l.isBroken=true;breakWords();} else {active=true;}
+  });
+  for(let i=shards.length-1;i>=0;i--){
+    const s=shards[i];
+    s.velY+=s.gravity;s.x+=s.velX;s.y+=s.velY;s.opacity-=0.02;
+    if(s.opacity<=0){s.element.remove();shards.splice(i,1);}
+    else{s.element.style.transform=`translate3d(${s.x}px,${s.y}px,0)`;s.element.style.opacity=s.opacity;active=true;}
+  }
+  if(active)animFrame=requestAnimationFrame(update);
+}
+function launchGame(){
+  dosbox.style.display="block";
+  Dos(dosbox,{wdosboxUrl:"https://js-dos.com/6.22/current/wdosbox.js"}).ready((fs,main)=>{
+    fs.extract(fileUrl).then(()=>{
+      // якщо у ZIP є папка Supaplex/, треба вказати її
+      main(["Supaplex/SUPAPLEX.BAT"]);
+    }).catch(err=>showError(err.message));
+  });
+}
+startCycle();
+launchGame();
